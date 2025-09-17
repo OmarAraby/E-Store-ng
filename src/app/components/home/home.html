@@ -1,0 +1,122 @@
+<div class="home-container">
+    <div class="user-header">
+      <div class="user-info">
+        <h1>Welcome, {{ user?.username || 'User' }}</h1>
+        <p class="user-email">{{ user?.email }}</p>
+      </div>
+      <button (click)="logout()" class="logout-btn">
+        <span>Logout</span>
+      </button>
+    </div>
+  
+    <div class="products-section">
+      <div class="section-header">
+        <h2>Our Products</h2>
+        <div class="products-count" *ngIf="!isLoading() && !error()">
+          Showing {{ getStartIndex() + 1 }}-{{ getEndIndex() }} of {{ products().length }} products
+        </div>
+      </div>
+      
+      <div *ngIf="isLoading()" class="loading-container">
+        <div class="loading-spinner"></div>
+        <p>Loading products...</p>
+      </div>
+  
+      <div *ngIf="error()" class="error-container">
+        <div class="error-icon">⚠️</div>
+        <p class="error-message">{{ error() }}</p>
+        <button (click)="loadProducts()" class="retry-btn">
+          <span>Try Again</span>
+        </button>
+      </div>
+  
+      <div *ngIf="!isLoading() && !error() && products().length > 0" class="products-content">
+        <!-- Products per page selector -->
+        <div class="pagination-controls-top">
+          <div class="items-per-page">
+            <label for="itemsPerPage">Items per page:</label>
+            <select id="itemsPerPage" [(ngModel)]="itemsPerPage" (change)="onItemsPerPageChange()">
+              <option value="6">6</option>
+              <option value="12">12</option>
+              <option value="18">18</option>
+              <option value="24">24</option>
+            </select>
+          </div>
+        </div>
+  
+        <!-- Product Grid -->
+        <div class="product-grid">
+          <div *ngFor="let product of getPaginatedProducts()" class="product-card">
+            <div class="product-image">
+              <img 
+                [src]="product.images && product.images.length > 0 
+                  ? product.images[0].imagePath 
+                  : 'img.png'" 
+                [alt]="product.name"
+                loading="lazy"
+              >
+              <div class="product-overlay">
+                <button class="quick-view-btn">Quick View</button>
+              </div>
+            </div>
+            <div class="product-details">
+              <h3 class="product-name">{{ product.name }}</h3>
+              <p class="product-category">{{ product.category }}</p>
+              <div class="product-price-actions">
+                <span class="price">${{ product.price.toFixed(2) }}</span>
+                <button class="add-to-cart-btn">
+                  <span>Add to Cart</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+  
+        <!-- Pagination -->
+        <div class="pagination-container" *ngIf="getTotalPages() > 1">
+          <div class="pagination">
+            <!-- Previous button -->
+            <button 
+              class="pagination-btn prev-btn" 
+              [disabled]="currentPage === 1"
+              (click)="goToPage(currentPage - 1)">
+              <span>← Previous</span>
+            </button>
+  
+            <!-- Page numbers -->
+            <div class="page-numbers">
+              <button 
+                *ngFor="let page of getPageNumbers()" 
+                class="page-btn"
+                [class.active]="page === currentPage"
+                [class.ellipsis]="page === '...'"
+                [disabled]="page === '...'"
+                (click)="page !== '...' && goToPage(page)">
+                {{ page }}
+              </button>
+            </div>
+  
+            <!-- Next button -->
+            <button 
+              class="pagination-btn next-btn" 
+              [disabled]="currentPage === getTotalPages()"
+              (click)="goToPage(currentPage + 1)">
+              <span>Next →</span>
+            </button>
+          </div>
+  
+          <!-- Pagination info -->
+          <div class="pagination-info">
+            Page {{ currentPage }} of {{ getTotalPages() }}
+          </div>
+        </div>
+      </div>
+  
+      <!-- No products message -->
+      <div *ngIf="!isLoading() && !error() && products().length === 0" class="no-products">
+        <div class="no-products-icon">📦</div>
+        <h3>No Products Available</h3>
+        <p>We're working on adding new products. Please check back later!</p>
+      </div>
+    </div>
+  </div>

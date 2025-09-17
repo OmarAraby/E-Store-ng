@@ -1,7 +1,7 @@
 export const environment = {
-    production: true,
-    // apiUrl: 'https://localhost:7126/api',
-    appName: 'EStore',
-    appVersion: '1.0.0',
-  };
+  production: true,
+//   apiUrl: 'https://api.yourproductiondomain.com/api', 
+  tokenKey: 'access_token',
+  refreshTokenKey: 'refresh_token'
+};
   

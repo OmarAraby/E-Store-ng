@@ -25,5 +25,6 @@ export interface LoginDto {
     username: string;
     email: string;
     lastLoginTime?: string;
+    roles?: string[]; // Optional roles if needed
   }
   

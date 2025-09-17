@@ -1,9 +1,10 @@
 import { inject, Injectable } from '@angular/core';
-import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { BehaviorSubject, Observable, throwError } from 'rxjs';
-import { map, catchError, tap } from 'rxjs/operators';
+import { map, catchError } from 'rxjs/operators';
 import { Router } from '@angular/router';
-import { LoginDto, TokenResponseDto, RefreshTokenDto, User } from '../models/auth.models';
+
+import { LoginDto, TokenResponseDto, RefreshTokenDto, User, RegisterDto } from '../models/auth.models';
 import { ApiResponse } from '../models/api-response.models';
 import { NotificationService } from './notification.service';
 import { environment } from '../../../environments/environment';
@@ -13,6 +14,8 @@ import { environment } from '../../../environments/environment';
 })
 export class AuthService {
   private apiUrl = environment.apiUrl;
+  private http = inject(HttpClient);
+  private router = inject(Router);
   private notificationService = inject(NotificationService);
 
   private currentUserSubject = new BehaviorSubject<User | null>(null);
@@ -21,15 +24,12 @@ export class AuthService {
   private tokenSubject = new BehaviorSubject<string | null>(null);
   public token$ = this.tokenSubject.asObservable();
 
-  constructor(
-    private http: HttpClient,
-    private router: Router
-  ) {
+  constructor() {
     this.initializeAuth();
   }
 
   private initializeAuth(): void {
-    const token = localStorage.getItem('access_token');
+    const token = localStorage.getItem(environment.tokenKey);
     const user = localStorage.getItem('user');
     
     if (token && user) {
@@ -52,7 +52,7 @@ export class AuthService {
     );
   }
 
-  register(registerDto: any): Observable<TokenResponseDto> {
+  register(registerDto: RegisterDto): Observable<TokenResponseDto> {
     return this.http.post<ApiResponse<TokenResponseDto>>(`${this.apiUrl}/auth/register`, registerDto).pipe(
       map(response => {
         if (response.success && response.data) {
@@ -82,7 +82,7 @@ export class AuthService {
   }
 
   refreshToken(): Observable<TokenResponseDto> {
-    const refreshToken = localStorage.getItem('refresh_token');
+    const refreshToken = localStorage.getItem(environment.refreshTokenKey);
     if (!refreshToken) {
       return throwError(() => new Error('No refresh token available'));
     }
@@ -102,13 +102,13 @@ export class AuthService {
 
   private setSession(tokenResponse: TokenResponseDto): void {
     // Store tokens
-    localStorage.setItem('access_token', tokenResponse.accessToken);
-    localStorage.setItem('refresh_token', tokenResponse.refreshToken);
+    localStorage.setItem(environment.tokenKey, tokenResponse.accessToken);
+    localStorage.setItem(environment.refreshTokenKey, tokenResponse.refreshToken);
 
     // Update token and user subjects
     this.tokenSubject.next(tokenResponse.accessToken);
     
-    // Decode token to get user info (you might want to create a helper method for this)
+    // Decode token to get user info
     const user: User = this.decodeToken(tokenResponse.accessToken);
     this.currentUserSubject.next(user);
     localStorage.setItem('user', JSON.stringify(user));
@@ -116,8 +116,8 @@ export class AuthService {
 
   private clearSession(): void {
     // Clear local storage
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
+    localStorage.removeItem(environment.tokenKey);
+    localStorage.removeItem(environment.refreshTokenKey);
     localStorage.removeItem('user');
 
     // Reset subjects
@@ -126,16 +126,21 @@ export class AuthService {
   }
 
   private decodeToken(token: string): User {
-    // simple JWT decoder
+    // This is a simplified token decoding. In a real app, you'd use a proper JWT decoder
     try {
       const base64Url = token.split('.')[1];
       const base64 = base64Url.replace('-', '+').replace('_', '/');
       const payload = JSON.parse(window.atob(base64));
 
+      // XML Schema claim names
+      const nameIdentifierClaim = 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier';
+      const nameClaim = 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name';
+      const emailClaim = 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress';
+
       return {
-        id: payload.nameid,
-        username: payload.name,
-        email: payload.email
+        id: payload[nameIdentifierClaim],
+        username: payload[nameClaim],
+        email: payload[emailClaim]
       };
     } catch (error) {
       console.error('Error decoding token', error);
@@ -147,12 +152,12 @@ export class AuthService {
     let errorMessage = 'An unknown error occurred';
     
     if (error.error instanceof ErrorEvent) {
-      // client-side error
+      // Client-side error
       errorMessage = `Error: ${error.error.message}`;
     } else {
-      // server-side error
+      // Server-side error
       if (error.status === 401) {
-        // unauthorized - likely an invalid token
+        // Unauthorized - likely an invalid token
         this.clearSession();
         this.router.navigate(['/login']);
         errorMessage = 'Session expired. Please log in again.';
@@ -167,7 +172,7 @@ export class AuthService {
 
   // Utility methods
   isLoggedIn(): boolean {
-    return !!localStorage.getItem('access_token');
+    return !!localStorage.getItem(environment.tokenKey);
   }
 
   getCurrentUser(): User | null {

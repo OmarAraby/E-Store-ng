@@ -19,7 +19,7 @@ export class ProductService {
 
   // Get all products
   getAllProducts(): Observable<ProductDto[]> {
-    return this.http.get<ApiResponse<ProductDto[]>>(`${this.apiUrl}/products`).pipe(
+    return this.http.get<ApiResponse<ProductDto[]>>(`${this.apiUrl}/product`).pipe(
       map(response => {
         if (response.success && response.data) {
           return response.data;

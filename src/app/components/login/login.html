@@ -1,0 +1,53 @@
+<div class="login-container">
+    <div class="login-card">
+        <div class="form-header">
+            <div class="icon-wrapper">
+                <span class="login-icon">🏢</span>
+            </div>
+            <p class="welcome-back">Welcome back</p>
+            <h1 class="form-title">Login In</h1>
+        </div>
+
+        <form [formGroup]="loginForm" (ngSubmit)="login()">
+            <div class="form-group">
+                <input 
+                    type="email" 
+                    class="form-control" 
+                    placeholder="Email Address"
+                    formControlName="email"
+                    [class.error]="loginForm.get('email')?.invalid && loginForm.get('email')?.touched"
+                />
+                <span class="error-message" *ngIf="loginForm.get('email')?.invalid && loginForm.get('email')?.touched">
+                    {{ getFieldError('email') }}
+                </span>
+            </div>
+
+            <div class="form-group">
+                <input 
+                    type="password" 
+                    class="form-control" 
+                    placeholder="Password"
+                    formControlName="password"
+                    [class.error]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
+                />
+                <span class="error-message" *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched">
+                    {{ getFieldError('password') }}
+                </span>
+            </div>
+
+            <button 
+                type="submit" 
+                class="submit-btn" 
+                [disabled]="isLoading() || loginForm.invalid">
+                <span *ngIf="!isLoading()">Sign In</span>
+                <span *ngIf="isLoading()">
+                    <span class="loading-spinner"></span> Signing In...
+                </span>
+            </button>
+        </form>
+
+        <div class="signup-link">
+            <p>Don't have an account? <a (click)="navigateToSignup()">Create Account</a></p>
+        </div>
+    </div>
+</div>

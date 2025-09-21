@@ -17,4 +17,15 @@ export interface ProductDto {
     uploadedAt: string;
   }
 
+  export interface ProductQueryParams {
+    searchTerm?: string;
+    pageNumber?: number;
+    pageSize?:number;
+    category?:string;
+    minPrice?:number;
+    maxPrice?:number;
+    sortBy?:string;
+    sortDescending?:boolean;
+  }
+
   

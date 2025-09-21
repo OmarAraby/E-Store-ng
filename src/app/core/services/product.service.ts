@@ -1,11 +1,12 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
-import { ProductDto, ProductImageDto } from '../models/product.models';
+import { ProductDto, ProductImageDto, ProductQueryParams } from '../models/product.models';
 import { ApiResponse } from '../models/api-response.models';
 import { NotificationService } from './notification.service';
+import { PageList } from '../models/common.models';
 
 @Injectable({
   providedIn: 'root'
@@ -28,6 +29,30 @@ export class ProductService {
       }),
       catchError(this.handleError)
     );
+  }
+
+  // get paginated products
+  getPaginatedProducts(queryParams: ProductQueryParams): Observable<PageList<ProductDto>> {
+    let params = new HttpParams();
+    Object.entries(queryParams).forEach(([key,value])=>{
+      if(value!==null && value!==undefined){
+        params = params.append(key,value.toString());
+      }
+    });
+
+    return this.http.get<ApiResponse<PageList<ProductDto>>>(`${this.apiUrl}/product/paginated`,{params}).pipe(
+      map(response=>{
+        if(response.success&&response.data){
+          return response.data;
+        }
+        throw new Error(response.message || 'Faild to fetch paginated products');
+
+      }),
+      catchError(this.handleError)
+    )
+
+
+
   }
 
   // Get product by ID

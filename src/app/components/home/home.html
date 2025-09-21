@@ -13,7 +13,7 @@
       <div class="section-header">
         <h2>Our Products</h2>
         <div class="products-count" *ngIf="!isLoading() && !error()">
-          Showing {{ getStartIndex() + 1 }}-{{ getEndIndex() }} of {{ products().length }} products
+          Showing {{ getStartIndex() + 1 }}-{{ getEndIndex() }} of {{ pageList()?.totalCount }} products
         </div>
       </div>
       
@@ -30,7 +30,7 @@
         </button>
       </div>
   
-      <div *ngIf="!isLoading() && !error() && products().length > 0" class="products-content">
+      <div *ngIf="!isLoading() && !error() && pageList()?.totalCount" class="products-content">
         <!-- Products per page selector -->
         <div class="pagination-controls-top">
           <div class="items-per-page">
@@ -46,7 +46,7 @@
   
         <!-- Product Grid -->
         <div class="product-grid">
-          <div *ngFor="let product of getPaginatedProducts()" class="product-card">
+          <div *ngFor="let product of pageList()?.items" class="product-card">
             <div class="product-image">
               <img 
                 [src]="product.images && product.images.length > 0 
@@ -78,8 +78,8 @@
             <!-- Previous button -->
             <button 
               class="pagination-btn prev-btn" 
-              [disabled]="currentPage === 1"
-              (click)="goToPage(currentPage - 1)">
+              [disabled]="queryParams.pageNumber"
+              (click)="goToPage(queryParams.pageNumber! - 1)">
               <span>← Previous</span>
             </button>
   
@@ -88,7 +88,7 @@
               <button 
                 *ngFor="let page of getPageNumbers()" 
                 class="page-btn"
-                [class.active]="page === currentPage"
+                [class.active]="page === queryParams.pageNumber"
                 [class.ellipsis]="page === '...'"
                 [disabled]="page === '...'"
                 (click)="page !== '...' && goToPage(page)">
@@ -99,21 +99,21 @@
             <!-- Next button -->
             <button 
               class="pagination-btn next-btn" 
-              [disabled]="currentPage === getTotalPages()"
-              (click)="goToPage(currentPage + 1)">
+              [disabled]="queryParams.pageNumber === getTotalPages()"
+              (click)="goToPage(queryParams.pageNumber! + 1)">
               <span>Next →</span>
             </button>
           </div>
   
           <!-- Pagination info -->
           <div class="pagination-info">
-            Page {{ currentPage }} of {{ getTotalPages() }}
+            Page {{ queryParams.pageNumber }} of {{ getTotalPages() }}
           </div>
         </div>
       </div>
   
       <!-- No products message -->
-      <div *ngIf="!isLoading() && !error() && products().length === 0" class="no-products">
+      <div *ngIf="!isLoading() && !error() && pageList()?.totalCount==0" class="no-products">
         <div class="no-products-icon">📦</div>
         <h3>No Products Available</h3>
         <p>We're working on adding new products. Please check back later!</p>

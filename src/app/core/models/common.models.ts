@@ -11,4 +11,15 @@ export interface PaginatedResult<T> {
   export interface FileUploadResult {
     fileUrl: string;
   }
+
+
+  export interface PageList<T> {
+    items: T[];
+    totalCount: number;
+    pageNumber: number;
+    pageSize: number;
+    totalPages: number;
+    hasPreviousPage: boolean;
+    hasNextPage: boolean;
+  }
   

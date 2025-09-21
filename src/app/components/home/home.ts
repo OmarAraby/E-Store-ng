@@ -6,8 +6,9 @@ import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/services/auth.service';
 import { ProductService } from '../../core/services/product.service';
 import { User } from '../../core/models/auth.models';
-import { ProductDto } from '../../core/models/product.models';
+import { ProductDto, ProductQueryParams } from '../../core/models/product.models';
 import { environment } from '../../../environments/environment';
+import { PageList } from '../../core/models/common.models';
 
 @Component({
   selector: 'app-home',
@@ -21,14 +22,27 @@ export class Home implements OnInit {
   private productService = inject(ProductService);
   
   user: User | null = null;
-  products = signal<ProductDto[]>([]);
+  // products = signal<ProductDto[]>([]);
   isLoading = signal(false);
   error = signal<string | null>(null);
 
-  // Pagination properties
-  currentPage = 1;
-  itemsPerPage = 12;
+  // // Pagination properties
+  // currentPage = 1;
+  // itemsPerPage = 12;
 
+  pageList = signal<PageList<ProductDto>|null>(null);
+
+  queryParams:ProductQueryParams={
+    pageNumber:1,
+    pageSize:6
+  }
+
+  
+  itemsPerPage: number;
+  
+  constructor(){
+    this.itemsPerPage = this.queryParams.pageSize ?? 6;
+  }
   // Method to get full image URL
   getProductImageUrl(imagePath: string): string {
     // If imagePath is already a full URL, return it
@@ -47,10 +61,10 @@ export class Home implements OnInit {
     this.isLoading.set(true);
     this.error.set(null);
 
-    this.productService.getAllProducts().subscribe({
-      next: (products) => {
+    this.productService.getPaginatedProducts(this.queryParams).subscribe({
+      next: (res) => {
         // Transform products to ensure full image URLs
-        const processedProducts = products.map(product => ({
+        const processedProducts = res.items.map(product => ({
           ...product,
           images: product.images.map(image => ({
             ...image,
@@ -58,11 +72,9 @@ export class Home implements OnInit {
           }))
         }));
 
-        this.products.set(processedProducts);
+        this.pageList.set({...res,items:processedProducts});
         this.isLoading.set(false);
         
-        // Reset to first page when products are loaded
-        this.currentPage = 1;
       },
       error: (err) => {
         this.error.set(err.message || 'Failed to load products');
@@ -77,18 +89,21 @@ export class Home implements OnInit {
 
   // Pagination methods
   getTotalPages(): number {
-    return Math.ceil(this.products().length / this.itemsPerPage);
+    return this.pageList()?.totalPages??0;
   }
 
-  getPaginatedProducts(): ProductDto[] {
-    const startIndex = (this.currentPage - 1) * this.itemsPerPage;
-    const endIndex = startIndex + this.itemsPerPage;
-    return this.products().slice(startIndex, endIndex);
-  }
+  // useless for now 
+
+  // getPaginatedProducts(): ProductDto[] {
+  //   const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+  //   const endIndex = startIndex + this.itemsPerPage;
+  //   return this.products().slice(startIndex, endIndex);
+  // }
 
   goToPage(page: number | string) {
     if (typeof page === 'number' && page >= 1 && page <= this.getTotalPages()) {
-      this.currentPage = page;
+      this.queryParams.pageNumber = page;
+      this.loadProducts();
       // Scroll to top of products section
       this.scrollToProducts();
     }
@@ -96,7 +111,7 @@ export class Home implements OnInit {
 
   getPageNumbers(): (number | string)[] {
     const totalPages = this.getTotalPages();
-    const currentPage = this.currentPage;
+    const currentPage = this.queryParams.pageNumber!;
     const pageNumbers: (number | string)[] = [];
 
     if (totalPages <= 7) {
@@ -134,17 +149,22 @@ export class Home implements OnInit {
   }
 
   onItemsPerPageChange() {
-    this.currentPage = 1; // Reset to first page
+    this.queryParams.pageSize = this.itemsPerPage;
+    this.queryParams.pageNumber = 1
+    this.loadProducts();
     this.scrollToProducts();
   }
 
   getStartIndex(): number {
-    return (this.currentPage - 1) * this.itemsPerPage;
+    const pageInfo = this.pageList();
+    if (!pageInfo || pageInfo.totalCount === 0) return 0;
+    return (pageInfo.pageNumber - 1) * pageInfo.pageSize + 1;
   }
 
   getEndIndex(): number {
-    const endIndex = this.currentPage * this.itemsPerPage;
-    return Math.min(endIndex, this.products().length);
+    const pageInfo = this.pageList();
+    if (!pageInfo || pageInfo.totalCount === 0) return 0;
+    return (pageInfo.pageNumber - 1) * pageInfo.pageSize + pageInfo.items.length;
   }
 
   private scrollToProducts() {

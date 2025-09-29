@@ -98,10 +98,13 @@ export class Login implements OnInit {
       finalize(() => this.isLoading.set(false))
     ).subscribe({
       next: () => {
+        const currentUser = this.authService.getCurrentUser();
+        const username = currentUser ? currentUser.username : 'there';
+
         this.title.setTitle('Home');
         // Navigate to return URL or home
         this.router.navigateByUrl(this.returnUrl);
-        this.notificationService.showSuccess('Login successful');
+        this.notificationService.showSuccess('Welcome back '+username);
       },
       error: (err) => {
         // More specific error handling

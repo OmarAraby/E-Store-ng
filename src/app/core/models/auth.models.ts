@@ -21,7 +21,7 @@ export interface LoginDto {
   }
   
   export interface User {
-    id: string;
+    // id: string;
     username: string;
     email: string;
     lastLoginTime?: string;

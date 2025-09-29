@@ -138,7 +138,7 @@ export class AuthService {
       const emailClaim = 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress';
 
       return {
-        id: payload[nameIdentifierClaim],
+        // id: payload[nameIdentifierClaim],
         username: payload[nameClaim],
         email: payload[emailClaim]
       };
